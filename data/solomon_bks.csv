@@ -1,0 +1,4 @@
+instance,customers,vehicles_available,capacity,best_known_vehicles,best_known_distance,bks_reference
+C101,100,25,200,10,828.94,"Minocha & Tripathi (2013), IJAE-139, Table 3"
+R101,100,25,200,19,1650.80,"Minocha & Tripathi (2013), IJAE-139, Table 3"
+RC101,100,25,200,14,1696.94,"Minocha & Tripathi (2013), IJAE-139, Table 3"
