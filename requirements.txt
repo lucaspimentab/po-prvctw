@@ -1,1 +1,2 @@
 ﻿gurobipy==12.0.2
+matplotlib>=3.8
