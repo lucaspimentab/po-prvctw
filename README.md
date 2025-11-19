@@ -1,36 +1,27 @@
 ﻿## Trabalho de Pesquisa Operacional - PRVC-TW
 
-Repositorio com os scripts usados para resolver o Problema de Roteamento de Veiculos com Capacidade e Janelas de Tempo (PRVC-TW) nas instancias classicas de Solomon (C101, R101 e RC101).
+Repositório contendo o pipeline baseado em Gurobi para resolver o Problema de Roteamento de Veículos com Capacidade e Janelas de Tempo (PRVC-TW) nas instâncias clássicas de Solomon (C101, R101 e RC101).
 
 ### Estrutura
-- `instances/` - arquivos `.txt` originais do benchmark de Solomon (100 clientes + deposito).
-- `data/solomon_bks.csv` - tabela com numero de veiculos e distancias otimas publicadas (Minocha & Tripathi, 2013).
-- `scripts/solve_vrptw.py` - solver heuristico usando Google OR-Tools (dimensoes de tempo e capacidade).
-- `scripts/solve_vrptw_gurobi.py` - modelo MILP completo montado no Gurobi para documentar funcao objetivo e restricoes.
-- `results/` - sao gerados `solomon_vrptw_results.*` (OR-Tools) e `solomon_vrptw_gurobi.*` (Gurobi) em CSV/JSON.
-- `docs/trabalho_po_prvctw.tex` - artigo-base para Overleaf seguindo o roteiro pedido em aula.
+- `instances/` - arquivos `.txt` originais das instâncias de Solomon (100 clientes + depósito).
+- `data/solomon_bks.csv` - tabela com os melhores valores conhecidos (BKS) usados para comparar distância/frota.
+- `scripts/solve_vrptw_gurobi.py` - modelo MILP completo em Python + gurobipy
+- `results/` - pasta onde o script salva `solomon_vrptw_gurobi.json` e `.csv`.
+- `docs/` - relatório
 
-### Execucao rapida
-1. Instale as dependencias:
+### Como executar
+1. Crie o ambiente e instale as dependências:
    ```bash
    pip install -r requirements.txt
    ```
-2. Rode o solver heuristico (OR-Tools):
-   ```bash
-   python scripts/solve_vrptw.py
-   ```
-3. Rode o modelo MILP no Gurobi (necessita licenca ativa):
+2. Certifique-se de ter uma licença válida do Gurobi configurada (`gurobi.lic`).
+3. Execute o solver:
    ```bash
    python scripts/solve_vrptw_gurobi.py
    ```
-   Os logs do Gurobi mostram a convergencia do MIP; ao final os resultados sao gravados na pasta `results/`.
+4. Ao final consulte `results/solomon_vrptw_gurobi.csv` para comparar os resultados obtidos com o BKS citado na planilha.
 
-### Dados e referencias
-- As instancias foram obtidas do repositorio publico de Solomon (arquivo texto tradicional), logo cada cliente possui coordenadas euclidianas, demanda, janela [inicio, fim] e tempo de servico fixo.
-- A planilha `data/solomon_bks.csv` traz os melhores valores conhecidos (BKS) usados para comparar frota e distancia.
-- Nao ha dados sinteticos novos aqui; tudo foi retirado diretamente da literatura classica do PRVC-TW.
-
-### Observacoes
-- O script do Gurobi usa um limite de 15 minutos por instancia (`DEFAULT_TIME_LIMIT`). Ajuste se tiver uma licenca mais forte.
-- Se precisar trocar/filtrar instancias, edite a lista `INSTANCE_SPECS` em `scripts/solve_vrptw.py` (o script do Gurobi importa a mesma definicao).
-- Ambos os scripts produzem CSV + JSON para facilitar a geracao de tabelas no relatorio e nos slides.
+### Dados e referências
+- Instâncias: Solomon (1987), com coordenadas euclidianas, demandas, tempos de serviço e janelas `[a_i, b_i]` para cada cliente.
+- BKS: Minocha & Tripathi (2013) – referência usada para montar `data/solomon_bks.csv`.
+- Solver: Gurobi Optimizer (branch-and-cut para MILP), integração via `gurobipy`.

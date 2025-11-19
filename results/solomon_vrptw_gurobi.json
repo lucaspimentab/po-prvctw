@@ -1,0 +1,839 @@
+[
+  {
+    "instance": "C101",
+    "vehicles_available": 25,
+    "vehicles_used": 10,
+    "capacity": 200,
+    "total_distance": 828.94,
+    "best_known_distance": 828.94,
+    "best_known_vehicles": 10,
+    "distance_gap_pct": 0.0,
+    "vehicle_gap": 0,
+    "runtime_seconds": 1.93,
+    "routes": [
+      {
+        "vehicle_id": 0,
+        "nodes": [
+          0,
+          5,
+          3,
+          7,
+          8,
+          10,
+          11,
+          9,
+          6,
+          4,
+          2,
+          1,
+          75,
+          0
+        ],
+        "distance": 59.62,
+        "load": 180,
+        "start_time": 15.13,
+        "end_time": 1068.0
+      },
+      {
+        "vehicle_id": 1,
+        "nodes": [
+          0,
+          13,
+          17,
+          18,
+          19,
+          15,
+          16,
+          14,
+          12,
+          0
+        ],
+        "distance": 95.88,
+        "load": 190,
+        "start_time": 30.81,
+        "end_time": 687.81
+      },
+      {
+        "vehicle_id": 2,
+        "nodes": [
+          0,
+          20,
+          24,
+          25,
+          27,
+          29,
+          30,
+          28,
+          26,
+          23,
+          22,
+          21,
+          0
+        ],
+        "distance": 50.8,
+        "load": 170,
+        "start_time": 10.0,
+        "end_time": 965.0
+      },
+      {
+        "vehicle_id": 3,
+        "nodes": [
+          0,
+          32,
+          33,
+          31,
+          35,
+          37,
+          38,
+          39,
+          36,
+          34,
+          0
+        ],
+        "distance": 97.23,
+        "load": 200,
+        "start_time": 31.62,
+        "end_time": 784.84
+      },
+      {
+        "vehicle_id": 4,
+        "nodes": [
+          0,
+          43,
+          42,
+          41,
+          40,
+          44,
+          46,
+          45,
+          48,
+          51,
+          50,
+          52,
+          49,
+          47,
+          0
+        ],
+        "distance": 64.81,
+        "load": 160,
+        "start_time": 16.55,
+        "end_time": 1127.0
+      },
+      {
+        "vehicle_id": 5,
+        "nodes": [
+          0,
+          57,
+          55,
+          54,
+          53,
+          56,
+          58,
+          60,
+          59,
+          0
+        ],
+        "distance": 101.88,
+        "load": 200,
+        "start_time": 35.0,
+        "end_time": 735.25
+      },
+      {
+        "vehicle_id": 6,
+        "nodes": [
+          0,
+          67,
+          65,
+          63,
+          62,
+          74,
+          72,
+          61,
+          64,
+          68,
+          66,
+          69,
+          0
+        ],
+        "distance": 59.4,
+        "load": 200,
+        "start_time": 12.21,
+        "end_time": 969.0
+      },
+      {
+        "vehicle_id": 7,
+        "nodes": [
+          0,
+          81,
+          78,
+          76,
+          71,
+          70,
+          73,
+          77,
+          79,
+          80,
+          0
+        ],
+        "distance": 127.3,
+        "load": 150,
+        "start_time": 47.43,
+        "end_time": 820.0
+      },
+      {
+        "vehicle_id": 8,
+        "nodes": [
+          0,
+          90,
+          87,
+          86,
+          83,
+          82,
+          84,
+          85,
+          88,
+          89,
+          91,
+          0
+        ],
+        "distance": 76.07,
+        "load": 170,
+        "start_time": 20.62,
+        "end_time": 889.0
+      },
+      {
+        "vehicle_id": 9,
+        "nodes": [
+          0,
+          98,
+          96,
+          95,
+          94,
+          92,
+          93,
+          97,
+          100,
+          99,
+          0
+        ],
+        "distance": 95.94,
+        "load": 190,
+        "start_time": 30.81,
+        "end_time": 820.0
+      }
+    ]
+  },
+  {
+    "instance": "R101",
+    "vehicles_available": 25,
+    "vehicles_used": 20,
+    "capacity": 200,
+    "total_distance": 1642.88,
+    "best_known_distance": 1650.8,
+    "best_known_vehicles": 19,
+    "distance_gap_pct": -0.48,
+    "vehicle_gap": 1,
+    "runtime_seconds": 1.73,
+    "routes": [
+      {
+        "vehicle_id": 0,
+        "nodes": [
+          0,
+          2,
+          21,
+          73,
+          41,
+          56,
+          4,
+          0
+        ],
+        "distance": 87.13,
+        "load": 57,
+        "start_time": 50.0,
+        "end_time": 159.0
+      },
+      {
+        "vehicle_id": 1,
+        "nodes": [
+          0,
+          5,
+          83,
+          61,
+          85,
+          37,
+          93,
+          0
+        ],
+        "distance": 74.5,
+        "load": 121,
+        "start_time": 34.0,
+        "end_time": 198.0
+      },
+      {
+        "vehicle_id": 2,
+        "nodes": [
+          0,
+          12,
+          76,
+          79,
+          3,
+          54,
+          24,
+          80,
+          0
+        ],
+        "distance": 92.12,
+        "load": 95,
+        "start_time": 63.0,
+        "end_time": 192.0
+      },
+      {
+        "vehicle_id": 3,
+        "nodes": [
+          0,
+          14,
+          44,
+          38,
+          43,
+          13,
+          0
+        ],
+        "distance": 100.87,
+        "load": 84,
+        "start_time": 32.02,
+        "end_time": 169.0
+      },
+      {
+        "vehicle_id": 4,
+        "nodes": [
+          0,
+          27,
+          69,
+          30,
+          51,
+          20,
+          32,
+          70,
+          0
+        ],
+        "distance": 87.92,
+        "load": 90,
+        "start_time": 37.0,
+        "end_time": 192.0
+      },
+      {
+        "vehicle_id": 5,
+        "nodes": [
+          0,
+          28,
+          29,
+          78,
+          34,
+          35,
+          77,
+          0
+        ],
+        "distance": 99.36,
+        "load": 64,
+        "start_time": 39.0,
+        "end_time": 189.0
+      },
+      {
+        "vehicle_id": 6,
+        "nodes": [
+          0,
+          31,
+          88,
+          7,
+          0
+        ],
+        "distance": 50.0,
+        "load": 41,
+        "start_time": 50.0,
+        "end_time": 91.0
+      },
+      {
+        "vehicle_id": 7,
+        "nodes": [
+          0,
+          33,
+          81,
+          50,
+          68,
+          0
+        ],
+        "distance": 71.64,
+        "load": 86,
+        "start_time": 37.0,
+        "end_time": 146.67
+      },
+      {
+        "vehicle_id": 8,
+        "nodes": [
+          0,
+          36,
+          47,
+          19,
+          8,
+          46,
+          17,
+          0
+        ],
+        "distance": 132.49,
+        "load": 61,
+        "start_time": 41.4,
+        "end_time": 167.0
+      },
+      {
+        "vehicle_id": 9,
+        "nodes": [
+          0,
+          39,
+          23,
+          67,
+          55,
+          25,
+          0
+        ],
+        "distance": 110.16,
+        "load": 93,
+        "start_time": 44.0,
+        "end_time": 182.0
+      },
+      {
+        "vehicle_id": 10,
+        "nodes": [
+          0,
+          40,
+          53,
+          26,
+          0
+        ],
+        "distance": 37.13,
+        "load": 40,
+        "start_time": 88.29,
+        "end_time": 142.0
+      },
+      {
+        "vehicle_id": 11,
+        "nodes": [
+          0,
+          45,
+          82,
+          18,
+          84,
+          60,
+          89,
+          0
+        ],
+        "distance": 87.98,
+        "load": 69,
+        "start_time": 32.0,
+        "end_time": 186.0
+      },
+      {
+        "vehicle_id": 12,
+        "nodes": [
+          0,
+          52,
+          6,
+          0
+        ],
+        "distance": 35.65,
+        "load": 12,
+        "start_time": 52.0,
+        "end_time": 106.88
+      },
+      {
+        "vehicle_id": 13,
+        "nodes": [
+          0,
+          59,
+          99,
+          94,
+          96,
+          0
+        ],
+        "distance": 45.39,
+        "load": 75,
+        "start_time": 18.0,
+        "end_time": 145.0
+      },
+      {
+        "vehicle_id": 14,
+        "nodes": [
+          0,
+          62,
+          11,
+          90,
+          10,
+          0
+        ],
+        "distance": 77.3,
+        "load": 50,
+        "start_time": 58.0,
+        "end_time": 127.1
+      },
+      {
+        "vehicle_id": 15,
+        "nodes": [
+          0,
+          63,
+          64,
+          49,
+          48,
+          0
+        ],
+        "distance": 107.35,
+        "load": 85,
+        "start_time": 34.93,
+        "end_time": 175.0
+      },
+      {
+        "vehicle_id": 16,
+        "nodes": [
+          0,
+          65,
+          71,
+          9,
+          66,
+          1,
+          0
+        ],
+        "distance": 123.32,
+        "load": 86,
+        "start_time": 51.0,
+        "end_time": 171.0
+      },
+      {
+        "vehicle_id": 17,
+        "nodes": [
+          0,
+          72,
+          75,
+          22,
+          74,
+          58,
+          0
+        ],
+        "distance": 60.6,
+        "load": 87,
+        "start_time": 35.0,
+        "end_time": 210.0
+      },
+      {
+        "vehicle_id": 18,
+        "nodes": [
+          0,
+          92,
+          42,
+          15,
+          87,
+          57,
+          97,
+          0
+        ],
+        "distance": 86.77,
+        "load": 60,
+        "start_time": 18.38,
+        "end_time": 141.63
+      },
+      {
+        "vehicle_id": 19,
+        "nodes": [
+          0,
+          95,
+          98,
+          16,
+          86,
+          91,
+          100,
+          0
+        ],
+        "distance": 75.2,
+        "load": 102,
+        "start_time": 39.0,
+        "end_time": 195.0
+      }
+    ]
+  },
+  {
+    "instance": "RC101",
+    "vehicles_available": 25,
+    "vehicles_used": 15,
+    "capacity": 200,
+    "total_distance": 1623.58,
+    "best_known_distance": 1696.94,
+    "best_known_vehicles": 14,
+    "distance_gap_pct": -4.32,
+    "vehicle_gap": 1,
+    "runtime_seconds": 901.33,
+    "routes": [
+      {
+        "vehicle_id": 0,
+        "nodes": [
+          0,
+          5,
+          45,
+          2,
+          7,
+          6,
+          8,
+          3,
+          1,
+          70,
+          0
+        ],
+        "distance": 116.54,
+        "load": 163,
+        "start_time": 41.0,
+        "end_time": 210.0
+      },
+      {
+        "vehicle_id": 1,
+        "nodes": [
+          0,
+          14,
+          47,
+          12,
+          73,
+          79,
+          46,
+          4,
+          100,
+          0
+        ],
+        "distance": 124.69,
+        "load": 128,
+        "start_time": 35.36,
+        "end_time": 210.0
+      },
+      {
+        "vehicle_id": 2,
+        "nodes": [
+          0,
+          23,
+          21,
+          18,
+          49,
+          22,
+          20,
+          25,
+          24,
+          0
+        ],
+        "distance": 121.63,
+        "load": 150,
+        "start_time": 65.0,
+        "end_time": 178.0
+      },
+      {
+        "vehicle_id": 3,
+        "nodes": [
+          0,
+          39,
+          42,
+          44,
+          61,
+          81,
+          68,
+          55,
+          0
+        ],
+        "distance": 104.2,
+        "load": 86,
+        "start_time": 37.0,
+        "end_time": 170.0
+      },
+      {
+        "vehicle_id": 4,
+        "nodes": [
+          0,
+          59,
+          75,
+          87,
+          97,
+          58,
+          77,
+          0
+        ],
+        "distance": 162.7,
+        "load": 110,
+        "start_time": 45.0,
+        "end_time": 172.63
+      },
+      {
+        "vehicle_id": 5,
+        "nodes": [
+          0,
+          63,
+          33,
+          28,
+          30,
+          34,
+          50,
+          91,
+          80,
+          0
+        ],
+        "distance": 128.14,
+        "load": 122,
+        "start_time": 39.05,
+        "end_time": 222.0
+      },
+      {
+        "vehicle_id": 6,
+        "nodes": [
+          0,
+          64,
+          51,
+          85,
+          84,
+          56,
+          66,
+          0
+        ],
+        "distance": 83.26,
+        "load": 91,
+        "start_time": 53.0,
+        "end_time": 163.0
+      },
+      {
+        "vehicle_id": 7,
+        "nodes": [
+          0,
+          65,
+          52,
+          99,
+          57,
+          86,
+          74,
+          0
+        ],
+        "distance": 90.43,
+        "load": 93,
+        "start_time": 11.18,
+        "end_time": 169.87
+      },
+      {
+        "vehicle_id": 8,
+        "nodes": [
+          0,
+          69,
+          98,
+          88,
+          53,
+          78,
+          60,
+          0
+        ],
+        "distance": 77.89,
+        "load": 104,
+        "start_time": 41.0,
+        "end_time": 170.53
+      },
+      {
+        "vehicle_id": 9,
+        "nodes": [
+          0,
+          72,
+          36,
+          38,
+          41,
+          40,
+          43,
+          37,
+          35,
+          0
+        ],
+        "distance": 133.24,
+        "load": 178,
+        "start_time": 30.0,
+        "end_time": 169.0
+      },
+      {
+        "vehicle_id": 10,
+        "nodes": [
+          0,
+          82,
+          11,
+          15,
+          16,
+          9,
+          10,
+          13,
+          17,
+          0
+        ],
+        "distance": 116.74,
+        "load": 169,
+        "start_time": 42.0,
+        "end_time": 179.0
+      },
+      {
+        "vehicle_id": 11,
+        "nodes": [
+          0,
+          83,
+          19,
+          76,
+          89,
+          48,
+          0
+        ],
+        "distance": 138.88,
+        "load": 120,
+        "start_time": 35.0,
+        "end_time": 179.0
+      },
+      {
+        "vehicle_id": 12,
+        "nodes": [
+          0,
+          90,
+          0
+        ],
+        "distance": 8.49,
+        "load": 6,
+        "start_time": 92.0,
+        "end_time": 92.0
+      },
+      {
+        "vehicle_id": 13,
+        "nodes": [
+          0,
+          92,
+          31,
+          29,
+          27,
+          26,
+          32,
+          93,
+          0
+        ],
+        "distance": 125.82,
+        "load": 107,
+        "start_time": 14.76,
+        "end_time": 208.0
+      },
+      {
+        "vehicle_id": 14,
+        "nodes": [
+          0,
+          95,
+          62,
+          67,
+          71,
+          94,
+          96,
+          54,
+          0
+        ],
+        "distance": 90.93,
+        "load": 97,
+        "start_time": 34.0,
+        "end_time": 169.0
+      }
+    ]
+  }
+]
