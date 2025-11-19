@@ -9,7 +9,7 @@
     "best_known_vehicles": 10,
     "distance_gap_pct": 0.0,
     "vehicle_gap": 0,
-    "runtime_seconds": 1.93,
+    "runtime_seconds": 1.76,
     "routes": [
       {
         "vehicle_id": 0,
@@ -51,7 +51,7 @@
         "distance": 95.88,
         "load": 190,
         "start_time": 30.81,
-        "end_time": 687.81
+        "end_time": 713.0
       },
       {
         "vehicle_id": 2,
@@ -93,7 +93,7 @@
         "distance": 97.23,
         "load": 200,
         "start_time": 31.62,
-        "end_time": 784.84
+        "end_time": 816.0
       },
       {
         "vehicle_id": 4,
@@ -136,7 +136,7 @@
         "distance": 101.88,
         "load": 200,
         "start_time": 35.0,
-        "end_time": 735.25
+        "end_time": 696.83
       },
       {
         "vehicle_id": 6,
@@ -219,7 +219,7 @@
         "distance": 95.94,
         "load": 190,
         "start_time": 30.81,
-        "end_time": 820.0
+        "end_time": 782.4
       }
     ]
   },
@@ -233,7 +233,7 @@
     "best_known_vehicles": 19,
     "distance_gap_pct": -0.48,
     "vehicle_gap": 1,
-    "runtime_seconds": 1.73,
+    "runtime_seconds": 0.68,
     "routes": [
       {
         "vehicle_id": 0,
@@ -365,7 +365,7 @@
         "distance": 71.64,
         "load": 86,
         "start_time": 37.0,
-        "end_time": 146.67
+        "end_time": 152.0
       },
       {
         "vehicle_id": 8,
@@ -411,7 +411,7 @@
         ],
         "distance": 37.13,
         "load": 40,
-        "start_time": 88.29,
+        "start_time": 87.23,
         "end_time": 142.0
       },
       {
@@ -441,8 +441,8 @@
         ],
         "distance": 35.65,
         "load": 12,
-        "start_time": 52.0,
-        "end_time": 106.88
+        "start_time": 54.62,
+        "end_time": 109.0
       },
       {
         "vehicle_id": 13,
@@ -457,7 +457,7 @@
         "distance": 45.39,
         "load": 75,
         "start_time": 18.0,
-        "end_time": 145.0
+        "end_time": 135.0
       },
       {
         "vehicle_id": 14,
@@ -472,7 +472,7 @@
         "distance": 77.3,
         "load": 50,
         "start_time": 58.0,
-        "end_time": 127.1
+        "end_time": 124.0
       },
       {
         "vehicle_id": 15,
@@ -536,7 +536,7 @@
         "distance": 86.77,
         "load": 60,
         "start_time": 18.38,
-        "end_time": 141.63
+        "end_time": 142.39
       },
       {
         "vehicle_id": 19,
@@ -567,7 +567,7 @@
     "best_known_vehicles": 14,
     "distance_gap_pct": -4.32,
     "vehicle_gap": 1,
-    "runtime_seconds": 901.33,
+    "runtime_seconds": 699.34,
     "routes": [
       {
         "vehicle_id": 0,
@@ -659,8 +659,8 @@
         ],
         "distance": 162.7,
         "load": 110,
-        "start_time": 45.0,
-        "end_time": 172.63
+        "start_time": 42.43,
+        "end_time": 180.0
       },
       {
         "vehicle_id": 5,
@@ -713,7 +713,7 @@
         "distance": 90.43,
         "load": 93,
         "start_time": 11.18,
-        "end_time": 169.87
+        "end_time": 141.0
       },
       {
         "vehicle_id": 8,
@@ -730,7 +730,7 @@
         "distance": 77.89,
         "load": 104,
         "start_time": 41.0,
-        "end_time": 170.53
+        "end_time": 155.0
       },
       {
         "vehicle_id": 9,
@@ -784,7 +784,7 @@
         "distance": 138.88,
         "load": 120,
         "start_time": 35.0,
-        "end_time": 179.0
+        "end_time": 181.0
       },
       {
         "vehicle_id": 12,
@@ -795,8 +795,8 @@
         ],
         "distance": 8.49,
         "load": 6,
-        "start_time": 92.0,
-        "end_time": 92.0
+        "start_time": 86.0,
+        "end_time": 86.0
       },
       {
         "vehicle_id": 13,

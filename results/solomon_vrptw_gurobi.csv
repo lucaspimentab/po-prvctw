@@ -1,4 +1,4 @@
 instance,vehicles_available,vehicles_used,best_known_vehicles,vehicle_gap,total_distance,best_known_distance,distance_gap_pct,runtime_seconds
-C101,25,10,10,0,828.94,828.94,0.0,1.93
-R101,25,20,19,1,1642.88,1650.8,-0.48,1.73
-RC101,25,15,14,1,1623.58,1696.94,-4.32,901.33
+C101,25,10,10,0,828.94,828.94,0.0,1.76
+R101,25,20,19,1,1642.88,1650.8,-0.48,0.68
+RC101,25,15,14,1,1623.58,1696.94,-4.32,699.34

@@ -1,23 +1,15 @@
 ﻿"""
-Solver do PRVC-TW (Gurobi) nas instancias de Solomon (C101, R101, RC101).
+Solver MILP do PRVC-TW usando Gurobi nas instancias classicas de Solomon (C101, R101 e RC101).
 
 Modelo:
-  Variaveis:
-    x_ij  -> 1 se o arco (i,j) e percorrido em alguma rota.
-    load_i -> carga acumulada ao sair de i (MTZ).
-    t_i   -> tempo acumulado ate i (usa janela do deposito como limite global).
-
-  Funcao objetivo:
-    min  sum_{i} sum_{j} c_ij * x_ij
-
-  Restricoes principais:
-    (1) Atendimento unico do cliente: sum_j x_ij = 1 e sum_j x_ji = 1.
-    (2) Saida/retorno no deposito + conservacao do fluxo.
-    (3) Capacidade e eliminacao de subtours (restricoes MTZ em load_i).
-    (4) Janela de tempo global baseada em T_max do deposito.
+  - Variaveis: x_ij em {0,1}; load_i (capacidade acumulada); t_i (tempo acumulado).
+  - Funcao objetivo (OBJ):  minimizar sum_i sum_j c_ij * x_ij.
+  - Restricao (1): sum_j x_ij = 1 e sum_j x_ji = 1 (cada cliente atende uma unica vez).
+  - Restricao (2): sum_j x_0j = sum_i x_i0 (saida/retorno ao deposito; conservacao do fluxo).
+  - Restricao (3): load_j >= load_i + d_j - Q(1 - x_ij) (capacidade e corte MTZ).
+  - Restricao (4): t_j >= t_i + s_i + c_ij            (janelas individuais [a_i, b_i]).
 
 """
-
 from __future__ import annotations
 
 import csv
@@ -31,8 +23,8 @@ from typing import Dict, Iterable, List, Tuple
 import gurobipy as gp
 from gurobipy import GRB
 
+# Constantes e arquivos auxiliares
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Conjunto de instancias
 INSTANCE_SPECS: List[Tuple[str, Path]] = [
     ("C101", BASE_DIR / "instances" / "Solomon_C101.txt"),
     ("R101", BASE_DIR / "instances" / "Solomon_R101.txt"),
@@ -79,13 +71,14 @@ class InstanceResult:
     routes: List[RouteResult]
 
 
+# Funções utilitárias
 def parse_solomon_instance(path: Path) -> InstanceData:
-    """Converte o .txt original de Solomon em vetores do PRVC-TW."""
+    """Lê um arquivo .txt de Solomon e devolve vetores alinhados ao índice do nó."""
     lines = [line.rstrip() for line in path.read_text().splitlines()]
     lines_iter = iter(lines)
     name = next(lines_iter).strip()
 
-    # Lê seção de veículos
+    # Fornece número de veículos e capacidade Q
     for line in lines_iter:
         if line.strip().upper().startswith("VEHICLE"):
             break
@@ -96,44 +89,45 @@ def parse_solomon_instance(path: Path) -> InstanceData:
     num_vehicles = int(number_str)
     capacity = int(capacity_str)
 
-    # Avança para a tabela de clientes
+    # Fornece a tabela de clientes (coordenadas, demanda, janela, serviço)
     for line in lines_iter:
         if line.strip().upper().startswith("CUSTOMER"):
             break
     header = next(lines_iter)
-    assert "CUST" in header.upper(), "Cabecalho inesperado no arquivo de Solomon."
+    assert "CUST" in header.upper(), "Cabeçalho inesperado em arquivo Solomon."
 
-    coordinates: Dict[int, Tuple[float, float]] = {}
+    # Dicionários temporários para acumular os dados antes de transformar em listas ordenadas
+    coords: Dict[int, Tuple[float, float]] = {}
     demands: Dict[int, int] = {}
-    time_windows: Dict[int, Tuple[int, int]] = {}
-    service_times: Dict[int, int] = {}
+    windows: Dict[int, Tuple[int, int]] = {}
+    services: Dict[int, int] = {}
 
-    for raw in lines_iter:
-        if not raw.strip():
+    for row in lines_iter:
+        if not row.strip():
             continue
-        parts = raw.split()
+        parts = row.split()
         if len(parts) < 7:
-            continue
-        node_id = int(parts[0])
-        coordinates[node_id] = (float(parts[1]), float(parts[2]))
-        demands[node_id] = int(parts[3])
-        time_windows[node_id] = (int(parts[4]), int(parts[5]))
-        service_times[node_id] = int(parts[6])
+            continue  # ignora eventuais linhas em branco
+        node = int(parts[0])
+        coords[node] = (float(parts[1]), float(parts[2]))
+        demands[node] = int(parts[3])
+        windows[node] = (int(parts[4]), int(parts[5]))
+        services[node] = int(parts[6])
 
-    node_ids = sorted(coordinates.keys())
+    ids = sorted(coords.keys())  # garante que o índice da lista corresponde ao ID do cliente
     return InstanceData(
         name=name,
         capacity=capacity,
         num_vehicles=num_vehicles,
-        coordinates=[coordinates[i] for i in node_ids],
-        demands=[demands[i] for i in node_ids],
-        time_windows=[time_windows[i] for i in node_ids],
-        service_times=[service_times[i] for i in node_ids],
+        coordinates=[coords[i] for i in ids],
+        demands=[demands[i] for i in ids],
+        time_windows=[windows[i] for i in ids],
+        service_times=[services[i] for i in ids],
     )
 
 
 def load_bks_table(path: Path) -> Dict[str, Dict[str, float]]:
-    """Carrega a planilha com os melhores valores conhecidos (BKS)."""
+    """Lê a planilha com os melhores valores conhecidos (BKS) para comparar gaps."""
     with path.open(newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         return {
@@ -147,7 +141,7 @@ def load_bks_table(path: Path) -> Dict[str, Dict[str, float]]:
 
 
 def attach_bks_info(result: InstanceResult, bks_row: Dict[str, float]) -> InstanceResult:
-    """Atualiza o resultado com a referencia usada no comparativo."""
+    """Acopla ao resultado as métricas publicadas (distância/veículos) e calcula o gap."""
     result.best_known_distance = bks_row["distance"]
     result.best_known_vehicles = int(bks_row["vehicles"])
     result.distance_gap_pct = round(
@@ -159,7 +153,7 @@ def attach_bks_info(result: InstanceResult, bks_row: Dict[str, float]) -> Instan
 
 
 def save_results(results: Iterable[InstanceResult], destination: Path) -> None:
-    """Grava o resultado detalhado (com rotas) em JSON."""
+    """Grava o resultado detalhado, incluindo rotas, em formato JSON."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = []
     for res in results:
@@ -170,7 +164,7 @@ def save_results(results: Iterable[InstanceResult], destination: Path) -> None:
 
 
 def export_summary_csv(results: Iterable[InstanceResult], destination: Path) -> None:
-    """Exporta um CSV compacto para usar no relatório/slides."""
+    """Gera o CSV."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "instance",
@@ -203,7 +197,7 @@ def export_summary_csv(results: Iterable[InstanceResult], destination: Path) -> 
 
 
 def build_distance_matrix(coords: List[Tuple[float, float]]) -> List[List[float]]:
-    """Matriz de distancias euclidianas usada nos custos e precedencias."""
+    """Calcula a matriz de distâncias euclidianas usada tanto no custo quanto no tempo."""
     size = len(coords)
     matrix = [[0.0] * size for _ in range(size)]
     for i in range(size):
@@ -214,14 +208,15 @@ def build_distance_matrix(coords: List[Tuple[float, float]]) -> List[List[float]
     return matrix
 
 
+# MILP 
 def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT_TIME_LIMIT) -> InstanceResult:
-    """Modelo MILP com funcao objetivo, capacidade e janelas explicitas."""
     coords = data.coordinates
     distance_matrix = build_distance_matrix(coords)
     num_nodes = len(coords)
-    customers = [i for i in range(num_nodes) if i != 0]
+    customers = [i for i in range(num_nodes) if i != 0]  # todos os nós exceto o depósito
     arcs = [(i, j) for i in range(num_nodes) for j in range(num_nodes) if i != j]
 
+    # Big-M para a restrição (4). Usa o maior intervalo observado nas janelas dos clientes
     max_due = max(high for _, high in data.time_windows)
     max_service = max(data.service_times)
     max_travel = max(distance_matrix[i][j] for i, j in arcs)
@@ -231,6 +226,7 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
     model.Params.TimeLimit = time_limit_sec
     model.Params.OutputFlag = 1
 
+    # Variáveis de decisão
     x = model.addVars(arcs, vtype=GRB.BINARY, name="x")
     t = {
         i: model.addVar(lb=data.time_windows[i][0], ub=data.time_windows[i][1], name=f"t_{i}")
@@ -238,21 +234,20 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
     }
     load = {i: model.addVar(lb=0.0, ub=data.capacity, name=f"load_{i}") for i in range(num_nodes)}
 
+    # (OBJ) minimizar a distância total percorrida 
     model.ModelSense = GRB.MINIMIZE
-    # Funcao objetivo -> minimizar a soma dos custos c_ij * x_ij
     model.setObjective(gp.quicksum(distance_matrix[i][j] * x[i, j] for i, j in arcs))
 
-    # (1) Atendimento unico e conservacao de fluxo
+    # (1) Atendimento único: cada cliente deve ter exatamente uma entrada e uma saída
     for i in customers:
         model.addConstr(gp.quicksum(x[i, j] for j in range(num_nodes) if j != i) == 1, name=f"saida_{i}")
         model.addConstr(gp.quicksum(x[j, i] for j in range(num_nodes) if j != i) == 1, name=f"entrada_{i}")
 
-    # (2) Saida/retorno ao deposito (permite desligar veiculos nao usados)
+    # (2) Conservação no depósito: número de arcos que saem do depósito = retornos
     model.addConstr(gp.quicksum(x[0, j] for j in customers) <= data.num_vehicles, name="limite_frota_saida")
     model.addConstr(gp.quicksum(x[i, 0] for i in customers) <= data.num_vehicles, name="limite_frota_entrada")
 
-    # Precedencia temporal respeitando janelas [a_i, b_i]
-    # (4) Janela de tempo global (usa T_max = due_time do deposito)
+    # (4) Janelas individuais: t_j >= t_i + s_i + c_ij para cada arco viavel (i,j)
     for i, j in arcs:
         service_i = data.service_times[i]
         model.addConstr(
@@ -260,10 +255,11 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
             name=f"precedencia_{i}_{j}",
         )
 
+    # Normalização: começa no depósito, carga 0, tempo no início da janela [a_0, b_0]
     model.addConstr(t[0] == data.time_windows[0][0], name="tempo_deposito")
     model.addConstr(load[0] == 0, name="carga_deposito")
 
-    # (3) Capacidade + eliminacao de subtours (MTZ)
+    # (3) Restrição de capacidade + eliminação de subtours (formulação MTZ em load_i)
     for i, j in arcs:
         demand_j = data.demands[j]
         if demand_j == 0:
@@ -273,10 +269,11 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
             name=f"capacidade_{i}_{j}",
         )
 
+    # Resolve o modelo MILP com Branch-and-Cut
     model.optimize()
 
     if model.SolCount == 0:
-        raise RuntimeError(f"Gurobi nao encontrou solucao viavel para {data.name} (status {model.Status}).")
+        raise RuntimeError(f"Gurobi não encontrou solução viável para {data.name} (status {model.Status}).")
 
     total_distance = sum(distance_matrix[i][j] * x[i, j].X for i, j in arcs)
     vehicles_used = sum(1 for j in customers if x[0, j].X > 0.5)
@@ -304,7 +301,7 @@ def _extract_routes(
     distance_matrix: List[List[float]],
     demands: List[int],
 ) -> List[RouteResult]:
-    """Reconstrói roteiros a partir das variáveis x exportando nós e cargas."""
+    """Reconstrói a lista de rotas a partir dos arcos ativos (x_ij = 1)."""
     successors: Dict[int, int] = {}
     starts: List[int] = []
     for (i, j), var in x_vars.items():
@@ -355,7 +352,6 @@ def _extract_routes(
 
 
 def main() -> None:
-    """Resolve cada instancia e grava os arquivos de saida."""
     bks_table = load_bks_table(BKS_TABLE_PATH)
     collected: List[InstanceResult] = []
 
@@ -370,8 +366,8 @@ def main() -> None:
         if bks_info:
             result = attach_bks_info(result, bks_info)
         print(
-            f"  -> veiculos {result.vehicles_used}/{result.vehicles_available}, "
-            f"distancia {result.total_distance:.2f} (gap {result.distance_gap_pct:.2f}%)."
+            f"  -> veículos {result.vehicles_used}/{result.vehicles_available}, "
+            f"distância {result.total_distance:.2f} (gap {result.distance_gap_pct:.2f}%)."
         )
         collected.append(result)
 
@@ -381,4 +377,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
