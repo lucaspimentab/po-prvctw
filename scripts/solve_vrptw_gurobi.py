@@ -1,5 +1,5 @@
 ﻿"""
-Solver MILP do PRVC-TW usando Gurobi nas instancias classicas de Solomon (C101, R101 e RC101).
+Solver MILP do PRVC-TW usando Gurobi para todas as instancias .txt em In/.
 
 Modelo:
   - Variaveis: x_ij em {0,1}; load_i (capacidade acumulada); t_i (tempo acumulado).
@@ -16,6 +16,7 @@ import csv
 import json
 import math
 import time
+import itertools
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
@@ -25,11 +26,7 @@ from gurobipy import GRB
 
 # Constantes e arquivos auxiliares
 BASE_DIR = Path(__file__).resolve().parent.parent
-INSTANCE_SPECS: List[Tuple[str, Path]] = [
-    ("C101", BASE_DIR / "instances" / "Solomon_C101.txt"),
-    ("R101", BASE_DIR / "instances" / "Solomon_R101.txt"),
-    ("RC101", BASE_DIR / "instances" / "Solomon_RC101.txt"),
-]
+INSTANCES_DIR = BASE_DIR / "In"
 BKS_TABLE_PATH = BASE_DIR / "data" / "solomon_bks.csv"
 RESULTS_DIR = BASE_DIR / "results"
 DEFAULT_TIME_LIMIT = 900
@@ -114,7 +111,8 @@ def parse_solomon_instance(path: Path) -> InstanceData:
         windows[node] = (int(parts[4]), int(parts[5]))
         services[node] = int(parts[6])
 
-    ids = sorted(coords.keys())  # garante que o índice da lista corresponde ao ID do cliente
+    # garante que o índice da lista corresponde ao ID do cliente
+    ids = sorted(coords.keys())
     return InstanceData(
         name=name,
         capacity=capacity,
@@ -145,7 +143,8 @@ def attach_bks_info(result: InstanceResult, bks_row: Dict[str, float]) -> Instan
     result.best_known_distance = bks_row["distance"]
     result.best_known_vehicles = int(bks_row["vehicles"])
     result.distance_gap_pct = round(
-        ((result.total_distance - result.best_known_distance) / result.best_known_distance) * 100.0,
+        ((result.total_distance - result.best_known_distance) /
+         result.best_known_distance) * 100.0,
         2,
     )
     result.vehicle_gap = result.vehicles_used - result.best_known_vehicles
@@ -208,19 +207,45 @@ def build_distance_matrix(coords: List[Tuple[float, float]]) -> List[List[float]
     return matrix
 
 
-# MILP 
+def infer_instance_name(path: Path) -> str:
+    """Infere o nome da instância pela primeira linha; se vazia, usa o nome do arquivo."""
+    with path.open("r", encoding="utf-8") as fh:
+        first_line = fh.readline().strip()
+    if first_line:
+        return first_line.split()[0].upper()
+    return path.stem.upper()
+
+
+# MILP
 def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT_TIME_LIMIT) -> InstanceResult:
     coords = data.coordinates
     distance_matrix = build_distance_matrix(coords)
     num_nodes = len(coords)
-    customers = [i for i in range(num_nodes) if i != 0]  # todos os nós exceto o depósito
-    arcs = [(i, j) for i in range(num_nodes) for j in range(num_nodes) if i != j]
+    # todos os nós exceto o depósito
+    customers = [i for i in range(num_nodes) if i != 0]
+    arcs: List[Tuple[int, int]] = []
+    for i in range(num_nodes):
+        earliest_i = data.time_windows[i][0]
+        service_i = data.service_times[i]
+        for j in range(num_nodes):
+            if i == j:
+                continue
 
-    # Big-M para a restrição (4). Usa o maior intervalo observado nas janelas dos clientes
-    max_due = max(high for _, high in data.time_windows)
-    max_service = max(data.service_times)
-    max_travel = max(distance_matrix[i][j] for i, j in arcs)
-    big_m_time = max_due + max_service + max_travel
+            travel_ij = distance_matrix[i][j]
+            latest_j = data.time_windows[j][1]
+
+            # Exclui arcos fisicamente inviáveis pela janela de tempo de j.
+            if earliest_i + service_i + travel_ij > latest_j:
+                continue
+
+            # Entre clientes, só permite par i->j que cabe na capacidade.
+            if i != 0 and j != 0 and (data.demands[i] + data.demands[j] > data.capacity):
+                continue
+
+            arcs.append((i, j))
+
+    outgoing = {i: [j for ii, j in arcs if ii == i] for i in range(num_nodes)}
+    incoming = {i: [j for j, ii in arcs if ii == i] for i in range(num_nodes)}
 
     model = gp.Model("vrptw_gurobi")
     model.Params.TimeLimit = time_limit_sec
@@ -229,29 +254,45 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
     # Variáveis de decisão
     x = model.addVars(arcs, vtype=GRB.BINARY, name="x")
     t = {
-        i: model.addVar(lb=data.time_windows[i][0], ub=data.time_windows[i][1], name=f"t_{i}")
+        i: model.addVar(
+            lb=data.time_windows[i][0], ub=data.time_windows[i][1], name=f"t_{i}")
         for i in range(num_nodes)
     }
-    load = {i: model.addVar(lb=0.0, ub=data.capacity, name=f"load_{i}") for i in range(num_nodes)}
+    load = {i: model.addVar(lb=0.0, ub=data.capacity, name=f"load_{i}")
+            for i in range(num_nodes)}
 
-    # (OBJ) minimizar a distância total percorrida 
+    # (OBJ) minimizar a distância total percorrida
     model.ModelSense = GRB.MINIMIZE
-    model.setObjective(gp.quicksum(distance_matrix[i][j] * x[i, j] for i, j in arcs))
+    model.setObjective(gp.quicksum(
+        distance_matrix[i][j] * x[i, j] for i, j in arcs))
 
     # (1) Atendimento único: cada cliente deve ter exatamente uma entrada e uma saída
     for i in customers:
-        model.addConstr(gp.quicksum(x[i, j] for j in range(num_nodes) if j != i) == 1, name=f"saida_{i}")
-        model.addConstr(gp.quicksum(x[j, i] for j in range(num_nodes) if j != i) == 1, name=f"entrada_{i}")
+        model.addConstr(gp.quicksum(x[i, j] for j in outgoing[i]) == 1,
+                        name=f"saida_{i}")
+        model.addConstr(gp.quicksum(x[j, i] for j in incoming[i]) == 1,
+                        name=f"entrada_{i}")
 
     # (2) Conservação no depósito: número de arcos que saem do depósito = retornos
-    model.addConstr(gp.quicksum(x[0, j] for j in customers) <= data.num_vehicles, name="limite_frota_saida")
-    model.addConstr(gp.quicksum(x[i, 0] for i in customers) <= data.num_vehicles, name="limite_frota_entrada")
+    model.addConstr(gp.quicksum(x[0, j] for j in outgoing[0])
+                    <= data.num_vehicles, name="limite_frota_saida")
+    model.addConstr(gp.quicksum(x[i, 0] for i in incoming[0])
+                    <= data.num_vehicles, name="limite_frota_entrada")
 
     # (4) Janelas individuais: t_j >= t_i + s_i + c_ij para cada arco viavel (i,j)
+    # Não aplicamos em j=0, pois t_0 representa apenas a partida do depósito.
+    # Aplicar a precedência em i->0 conflita com t_0 fixo no início da janela.
     for i, j in arcs:
+        if j == 0:
+            continue
         service_i = data.service_times[i]
+        latest_i = data.time_windows[i][1]
+        earliest_j = data.time_windows[j][0]
+        m_ij = max(0.0, latest_i + service_i +
+                   distance_matrix[i][j] - earliest_j)
         model.addConstr(
-            t[j] >= t[i] + service_i + distance_matrix[i][j] - big_m_time * (1 - x[i, j]),
+            t[j] >= t[i] + service_i + distance_matrix[i][j] -
+            m_ij * (1 - x[i, j]),
             name=f"precedencia_{i}_{j}",
         )
 
@@ -270,13 +311,43 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
         )
 
     # Resolve o modelo MILP com Branch-and-Cut
+    # Fase 1 (Matheurística): prioriza encontrar solução viável rapidamente.
+    model.Params.TimeLimit = 180 #antes 30
+    model.Params.MIPFocus = 1
+    model.Params.Heuristics = 0.5
     model.optimize()
 
+    if model.SolCount > 0:
+        fast_distance = sum(distance_matrix[i][j] * x[i, j].X for i, j in arcs)
+        print(f"  [Fase 1] Melhor distância inicial: {fast_distance:.2f}")
+
+    # Fase 2 (Fix-and-Optimize): se parou por tempo com gap ainda alto,
+    # congela as maiores rotas e reotimiza o restante.
+    if model.SolCount > 0 and model.Status == GRB.TIME_LIMIT and model.MIPGap > 0.01:
+        current_routes = _extract_routes(x, t, distance_matrix, data.demands)
+        routes_sorted = sorted(current_routes, key=lambda route: len(
+            route.nodes) - 2, reverse=True)
+        num_to_freeze = math.ceil(0.60 * len(routes_sorted))
+        frozen_routes = routes_sorted[:num_to_freeze]
+
+        for route in frozen_routes:
+            for i, j in itertools.pairwise(route.nodes):
+                if (i, j) in x:
+                    x[i, j].LB = 1
+                    x[i, j].UB = 1
+
+        print(
+            f"Fixando {len(frozen_routes)} rotas e reotimizando o restante...")
+        model.Params.MIPFocus = 0
+        model.Params.TimeLimit = 120 #antes 60
+        model.optimize()
+
     if model.SolCount == 0:
-        raise RuntimeError(f"Gurobi não encontrou solução viável para {data.name} (status {model.Status}).")
+        raise RuntimeError(
+            f"Gurobi não encontrou solução viável para {data.name} (status {model.Status}).")
 
     total_distance = sum(distance_matrix[i][j] * x[i, j].X for i, j in arcs)
-    vehicles_used = sum(1 for j in customers if x[0, j].X > 0.5)
+    vehicles_used = sum(1 for j in outgoing[0] if x[0, j].X > 0.5)
     runtime = model.Runtime
     routes = _extract_routes(x, t, distance_matrix, data.demands)
 
@@ -354,9 +425,33 @@ def _extract_routes(
 def main() -> None:
     bks_table = load_bks_table(BKS_TABLE_PATH)
     collected: List[InstanceResult] = []
+    DEV_MODE = False
 
-    for instance_name, path in INSTANCE_SPECS:
+    if DEV_MODE:
+        dev_files = ["Solomon_C101.txt",
+                     "Solomon_R101.txt", "Solomon_RC101.txt"]
+        available = {
+            path.name.lower(): path for path in INSTANCES_DIR.glob("*.txt")}
+        instance_paths: List[Path] = []
+        for name in dev_files:
+            target = available.get(name.lower())
+            if target is None:
+                # Compatibiliza nomes antigos Solomon_*.txt com c101/r101/rc101.txt em In/.
+                normalized = name.lower().removeprefix("solomon_")
+                target = available.get(normalized)
+            if target is not None:
+                instance_paths.append(target)
+    else:
+        instance_paths = sorted(INSTANCES_DIR.glob("*.txt"))
+
+    if not instance_paths:
+        raise FileNotFoundError(
+            f"Nenhum arquivo .txt encontrado em {INSTANCES_DIR}.")
+
+    for path in instance_paths:
+        instance_name = infer_instance_name(path)
         data = parse_solomon_instance(path)
+        data.name = instance_name
         print(f"[Gurobi] Resolvendo {instance_name} ({path}) ...")
         start = time.perf_counter()
         result = solve_instance_with_gurobi(data)

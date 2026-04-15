@@ -12,11 +12,7 @@ from matplotlib.lines import Line2D
 BASE_DIR = Path(__file__).resolve().parent.parent
 RESULTS_PATH = BASE_DIR / "results" / "solomon_vrptw_gurobi.json"
 FIGURES_DIR = BASE_DIR / "figures"
-INSTANCE_FILES: Dict[str, Path] = {
-    "C101": BASE_DIR / "instances" / "Solomon_C101.txt",
-    "R101": BASE_DIR / "instances" / "Solomon_R101.txt",
-    "RC101": BASE_DIR / "instances" / "Solomon_RC101.txt",
-}
+INSTANCES_DIR = BASE_DIR / "In"
 FIG_SIZE = (4.6, 4.6)
 COORD_PADDING = 5.0
 
@@ -33,7 +29,8 @@ class InstanceGeometry:
 
 def load_instance_geometry(path: Path) -> InstanceGeometry:
     """Lê um arquivo Solomon e retorna as listas alinhadas por ID."""
-    lines = [line.rstrip() for line in path.read_text().splitlines() if line.strip()]
+    lines = [line.rstrip()
+             for line in path.read_text().splitlines() if line.strip()]
     it = iter(lines)
     name = next(it).strip()
 
@@ -65,6 +62,21 @@ def load_instance_geometry(path: Path) -> InstanceGeometry:
     )
 
 
+def infer_instance_name(path: Path) -> str:
+    """Infere o nome da instância pela primeira linha; se vazia, usa o nome do arquivo."""
+    with path.open("r", encoding="utf-8") as fh:
+        first_line = fh.readline().strip()
+    if first_line:
+        return first_line.split()[0].upper()
+    return path.stem.upper()
+
+
+def build_instance_file_map(instances_dir: Path) -> Dict[str, Path]:
+    """Mapeia NOME_DA_INSTANCIA -> caminho do .txt em In/."""
+    paths = sorted(instances_dir.glob("*.txt"))
+    return {infer_instance_name(path): path for path in paths}
+
+
 def _prepare_axes(title: str, right: float = 0.95) -> plt.Axes:
     fig, ax = plt.subplots(figsize=FIG_SIZE, dpi=300)
     ax.set_title(title, fontsize=10, weight="bold")
@@ -90,10 +102,12 @@ def _apply_bounds(ax: plt.Axes, geom: InstanceGeometry) -> None:
 def plot_instance_graph(geom: InstanceGeometry, output_path: Path) -> None:
     depot = geom.coordinates[0]
     clients = geom.coordinates[1:]
-    ax = _prepare_axes(f"Instância {geom.name} - Distribuição geográfica", right=0.78)
+    ax = _prepare_axes(
+        f"Instância {geom.name} - Distribuição geográfica", right=0.78)
 
     xs, ys = zip(*clients)
-    ax.scatter(xs, ys, c="#4a90e2", s=18, alpha=0.85, edgecolor="#0e518c", linewidth=0.2, label="Clientes")
+    ax.scatter(xs, ys, c="#4a90e2", s=18, alpha=0.85,
+               edgecolor="#0e518c", linewidth=0.2, label="Clientes")
     ax.scatter(
         depot[0],
         depot[1],
@@ -125,7 +139,8 @@ def plot_routes(geom: InstanceGeometry, routes: Sequence[Dict], output_path: Pat
     depot = geom.coordinates[0]
     ax = _prepare_axes(f"Instância {geom.name} - Rotas obtidas", right=0.78)
     client_xs, client_ys = zip(*geom.coordinates[1:])
-    ax.scatter(client_xs, client_ys, c="#d3d3d3", s=12, label="Clientes", zorder=1)
+    ax.scatter(client_xs, client_ys, c="#d3d3d3",
+               s=12, label="Clientes", zorder=1)
     ax.scatter(
         depot[0],
         depot[1],
@@ -147,7 +162,8 @@ def plot_routes(geom: InstanceGeometry, routes: Sequence[Dict], output_path: Pat
         xs, ys = zip(*coords)
         color = palette(idx % palette.N)
         ax.plot(xs, ys, color=color, linewidth=1.4, alpha=0.95, zorder=2)
-        ax.scatter(xs[1:-1], ys[1:-1], c=[color], s=12, edgecolor="white", linewidth=0.4, zorder=3)
+        ax.scatter(xs[1:-1], ys[1:-1], c=[color], s=12,
+                   edgecolor="white", linewidth=0.4, zorder=3)
 
         if len(xs) > 2:
             ax.text(
@@ -197,15 +213,18 @@ def plot_routes(geom: InstanceGeometry, routes: Sequence[Dict], output_path: Pat
 
 def main() -> None:
     results = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
+    instance_files = build_instance_file_map(INSTANCES_DIR)
     for instance_data in results:
-        name = instance_data["instance"]
-        path = INSTANCE_FILES.get(name)
+        name = instance_data["instance"].upper()
+        path = instance_files.get(name)
         if not path or not path.exists():
-            print(f"[plot] Arquivo da instancia {name} nao encontrado, ignorando.")
+            print(
+                f"[plot] Arquivo da instancia {name} nao encontrado, ignorando.")
             continue
         geom = load_instance_geometry(path)
         plot_instance_graph(geom, FIGURES_DIR / f"{name}_grafo.png")
-        plot_routes(geom, instance_data["routes"], FIGURES_DIR / f"{name}_rotas_publicacao.png")
+        plot_routes(geom, instance_data["routes"],
+                    FIGURES_DIR / f"{name}_rotas_publicacao.png")
         print(f"[plot] Figuras atualizadas para {name}.")
 
 
