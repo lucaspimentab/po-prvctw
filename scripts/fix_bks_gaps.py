@@ -20,7 +20,7 @@ SINTEF_BKS = {
 }
 
 def fix_results_csv():
-    file_path = Path("results/solomon_vrptw_gurobi.csv")
+    file_path = Path("results/resultados_rapidos_pc_tunado.csv")
     
     if not file_path.exists():
         print("Arquivo CSV não encontrado na pasta results.")

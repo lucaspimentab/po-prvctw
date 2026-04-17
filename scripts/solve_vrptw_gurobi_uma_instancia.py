@@ -30,6 +30,7 @@ INSTANCES_DIR = BASE_DIR / "In"
 BKS_TABLE_PATH = BASE_DIR / "data" / "solomon_bks.csv"
 RESULTS_DIR = BASE_DIR / "results"
 DEFAULT_TIME_LIMIT = 900
+TARGET_INSTANCE_FILE = "c204.txt"
 
 
 @dataclass
@@ -312,7 +313,7 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
 
     # Resolve o modelo MILP com Branch-and-Cut
     # Fase 1 (Matheurística): prioriza encontrar solução viável rapidamente.
-    model.Params.TimeLimit = 30 #antes 30 depois 180
+    model.Params.TimeLimit = 180 #antes 30 depois 180
     model.Params.MIPFocus = 1
     model.Params.Heuristics = 0.5
     model.optimize()
@@ -339,7 +340,7 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
         print(
             f"Fixando {len(frozen_routes)} rotas e reotimizando o restante...")
         model.Params.MIPFocus = 0
-        model.Params.TimeLimit = 60 #antes 60 depois 120
+        model.Params.TimeLimit = 120 #antes 60 depois 120
         model.optimize()
 
     if model.SolCount == 0:
@@ -425,28 +426,13 @@ def _extract_routes(
 def main() -> None:
     bks_table = load_bks_table(BKS_TABLE_PATH)
     collected: List[InstanceResult] = []
-    DEV_MODE = False
 
-    if DEV_MODE:
-        dev_files = ["Solomon_C101.txt",
-                     "Solomon_R101.txt", "Solomon_RC101.txt"]
-        available = {
-            path.name.lower(): path for path in INSTANCES_DIR.glob("*.txt")}
-        instance_paths: List[Path] = []
-        for name in dev_files:
-            target = available.get(name.lower())
-            if target is None:
-                # Compatibiliza nomes antigos Solomon_*.txt com c101/r101/rc101.txt em In/.
-                normalized = name.lower().removeprefix("solomon_")
-                target = available.get(normalized)
-            if target is not None:
-                instance_paths.append(target)
-    else:
-        instance_paths = sorted(INSTANCES_DIR.glob("*.txt"))
-
-    if not instance_paths:
+    target_path = INSTANCES_DIR / TARGET_INSTANCE_FILE
+    if not target_path.exists():
         raise FileNotFoundError(
-            f"Nenhum arquivo .txt encontrado em {INSTANCES_DIR}.")
+            f"Instância alvo não encontrada: {target_path}")
+
+    instance_paths = [target_path]
 
     for path in instance_paths:
         instance_name = infer_instance_name(path)

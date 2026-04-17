@@ -1,0 +1,64 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+# Configuração de estilo
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['font.family'] = 'serif'
+
+def gerar_grafico_dificuldade():
+    df_lento = pd.read_csv('resultados_oficiais/resultados_lentos_pc_tunado.csv')
+    df_burro = pd.read_csv('resultados_oficiais/resultados_burros_pc_tunado.csv')
+
+    # Merge para parear
+    df_comp = df_lento[['instance', 'total_distance', 'runtime_seconds']].merge(
+        df_burro[['instance', 'total_distance', 'runtime_seconds']], 
+        on='instance', 
+        suffixes=('_nossa', '_classico')
+    )
+
+    # Classificação de Dificuldade
+    df_comp['Dificuldade'] = df_comp['runtime_seconds_classico'].apply(
+        lambda x: 'Instâncias Fáceis\n(Clássico < 300s)' if x < 300 else 'Instâncias Críticas\n(Timeout Clássico = 300s)'
+    )
+
+    # Cálculo da melhoria (positivo significa que nossa distância é MENOR)
+    df_comp['Melhoria (%)'] = ((df_comp['total_distance_classico'] - df_comp['total_distance_nossa']) / df_comp['total_distance_classico']) * 100
+
+    # =================================================================
+    # GRÁFICO: Barplot com Strip Plot
+    # =================================================================
+    plt.figure(figsize=(8, 6), dpi=300)
+    
+    # Barra indicando a média
+    ax = sns.barplot(x='Dificuldade', y='Melhoria (%)', data=df_comp, 
+                     palette=['#95a5a6', '#e74c3c'], edgecolor='black', alpha=0.8, capsize=0.1)
+    
+    # Pontinhos indicando cada instância individual
+    sns.stripplot(x='Dificuldade', y='Melhoria (%)', data=df_comp, 
+                  color='black', alpha=0.5, jitter=True, size=6)
+
+    plt.title('Ganho de Qualidade da Matheurística por Nível de Dificuldade', fontweight='bold', fontsize=13)
+    plt.ylabel('Redução na Distância vs. Modelo Clássico (%)', fontweight='bold')
+    plt.xlabel('')
+    
+    plt.axhline(0, color='black', linewidth=1)
+
+    # Anotações
+    medias = df_comp.groupby('Dificuldade')['Melhoria (%)'].mean()
+    
+    for i, p in enumerate(ax.patches):
+        # Evita anotar as barras de erro
+        if p.get_width() > 0.1:
+            val = p.get_height()
+            plt.annotate(f"Média: {val:.2f}%", 
+                         (p.get_x() + p.get_width() / 2., max(val, 0.5)), 
+                         ha='center', va='bottom', xytext=(0, 5), textcoords='offset points', fontweight='bold')
+
+    plt.tight_layout()
+    plt.savefig('grafico_faceis_vs_dificeis.png')
+    print("Gráfico 'grafico_faceis_vs_dificeis.png' gerado com sucesso!")
+
+if __name__ == "__main__":
+    gerar_grafico_dificuldade()

@@ -16,7 +16,6 @@ import csv
 import json
 import math
 import time
-import itertools
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
@@ -30,6 +29,8 @@ INSTANCES_DIR = BASE_DIR / "In"
 BKS_TABLE_PATH = BASE_DIR / "data" / "solomon_bks.csv"
 RESULTS_DIR = BASE_DIR / "results"
 DEFAULT_TIME_LIMIT = 900
+RESULTS_JSON_FILENAME = "resultados_burros_pc_tunado.json"
+RESULTS_CSV_FILENAME = "resultados_burros_pc_tunado.csv"
 
 
 @dataclass
@@ -223,32 +224,14 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
     num_nodes = len(coords)
     # todos os nós exceto o depósito
     customers = [i for i in range(num_nodes) if i != 0]
-    arcs: List[Tuple[int, int]] = []
-    for i in range(num_nodes):
-        earliest_i = data.time_windows[i][0]
-        service_i = data.service_times[i]
-        for j in range(num_nodes):
-            if i == j:
-                continue
-
-            travel_ij = distance_matrix[i][j]
-            latest_j = data.time_windows[j][1]
-
-            # Exclui arcos fisicamente inviáveis pela janela de tempo de j.
-            if earliest_i + service_i + travel_ij > latest_j:
-                continue
-
-            # Entre clientes, só permite par i->j que cabe na capacidade.
-            if i != 0 and j != 0 and (data.demands[i] + data.demands[j] > data.capacity):
-                continue
-
-            arcs.append((i, j))
+    arcs: List[Tuple[int, int]] = [
+        (i, j) for i in range(num_nodes) for j in range(num_nodes) if i != j
+    ]
 
     outgoing = {i: [j for ii, j in arcs if ii == i] for i in range(num_nodes)}
     incoming = {i: [j for j, ii in arcs if ii == i] for i in range(num_nodes)}
 
     model = gp.Model("vrptw_gurobi")
-    model.Params.TimeLimit = time_limit_sec
     model.Params.OutputFlag = 1
 
     # Variáveis de decisão
@@ -311,36 +294,14 @@ def solve_instance_with_gurobi(data: InstanceData, time_limit_sec: int = DEFAULT
         )
 
     # Resolve o modelo MILP com Branch-and-Cut
-    # Fase 1 (Matheurística): prioriza encontrar solução viável rapidamente.
-    model.Params.TimeLimit = 30 #antes 30 depois 180
-    model.Params.MIPFocus = 1
-    model.Params.Heuristics = 0.5
+    # Fase única (baseline clássico): busca padrão por 5 minutos.
+    model.Params.TimeLimit = 300
+    model.Params.MIPFocus = 0
     model.optimize()
 
     if model.SolCount > 0:
         fast_distance = sum(distance_matrix[i][j] * x[i, j].X for i, j in arcs)
         print(f"  [Fase 1] Melhor distância inicial: {fast_distance:.2f}")
-
-    # Fase 2 (Fix-and-Optimize): se parou por tempo com gap ainda alto,
-    # congela as maiores rotas e reotimiza o restante.
-    if model.SolCount > 0 and model.Status == GRB.TIME_LIMIT and model.MIPGap > 0.01:
-        current_routes = _extract_routes(x, t, distance_matrix, data.demands)
-        routes_sorted = sorted(current_routes, key=lambda route: len(
-            route.nodes) - 2, reverse=True)
-        num_to_freeze = math.ceil(0.60 * len(routes_sorted))
-        frozen_routes = routes_sorted[:num_to_freeze]
-
-        for route in frozen_routes:
-            for i, j in itertools.pairwise(route.nodes):
-                if (i, j) in x:
-                    x[i, j].LB = 1
-                    x[i, j].UB = 1
-
-        print(
-            f"Fixando {len(frozen_routes)} rotas e reotimizando o restante...")
-        model.Params.MIPFocus = 0
-        model.Params.TimeLimit = 60 #antes 60 depois 120
-        model.optimize()
 
     if model.SolCount == 0:
         raise RuntimeError(
@@ -466,8 +427,8 @@ def main() -> None:
         )
         collected.append(result)
 
-    save_results(collected, RESULTS_DIR / "resultados_rapidos_pc_tunado.json")
-    export_summary_csv(collected, RESULTS_DIR / "resultados_rapidos_pc_tunado.csv")
+    save_results(collected, RESULTS_DIR / RESULTS_JSON_FILENAME)
+    export_summary_csv(collected, RESULTS_DIR / RESULTS_CSV_FILENAME)
 
 
 if __name__ == "__main__":
